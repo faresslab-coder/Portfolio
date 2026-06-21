@@ -1,0 +1,93 @@
+name: Fetch Daily Prices
+
+on:
+  schedule:
+    # Run every day at 9 AM UTC (adjust time if needed)
+    - cron: '0 9 * * *'
+  
+  # Also allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  fetch-prices:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Fetch prices from Alpha Vantage
+        env:
+          ALPHA_VANTAGE_KEY: ${{ secrets.ALPHA_VANTAGE_KEY }}
+        run: |
+          node - <<'EOF'
+          const fs = require('fs');
+          
+          const ALPHA_VANTAGE_KEY = process.env.ALPHA_VANTAGE_KEY;
+          const symbols = [
+            'NVDA', 'GOOGL', 'PANW', 'TSM', 'AAPL', 'AVGO', 'TCEHY', 'ROKU',
+            'VHYL.AS', 'VUSA.AS', 'BOTZ.L', 'YCSH.AS', 'LYQ2.DE', 'IBCI.DE',
+            'SXRP.DE', 'EUNL.DE', 'IS3R.DE', 'IS3Q.DE', 'EUNM.DE'
+          ];
+          
+          const prices = {};
+          let fetchedCount = 0;
+          
+          async function fetchPrice(symbol) {
+            try {
+              const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${ALPHA_VANTAGE_KEY}`;
+              const response = await fetch(url);
+              const data = await response.json();
+              
+              if (data['Global Quote'] && data['Global Quote']['05. price']) {
+                const price = parseFloat(data['Global Quote']['05. price']);
+                prices[symbol] = price;
+                console.log(`✓ ${symbol}: €${price.toFixed(2)}`);
+                fetchedCount++;
+              } else {
+                console.log(`✗ ${symbol}: No price data`);
+              }
+            } catch (error) {
+              console.log(`✗ ${symbol}: Error - ${error.message}`);
+            }
+            
+            // Rate limiting: wait 250ms between calls
+            await new Promise(resolve => setTimeout(resolve, 250));
+          }
+          
+          async function main() {
+            console.log(`Fetching ${symbols.length} symbols from Alpha Vantage...`);
+            
+            for (const symbol of symbols) {
+              await fetchPrice(symbol);
+            }
+            
+            console.log(`\nFetched ${fetchedCount}/${symbols.length} prices`);
+            
+            // Save prices to JSON
+            fs.writeFileSync('prices.json', JSON.stringify(prices, null, 2));
+            console.log('✓ Saved prices.json');
+          }
+          
+          main().catch(err => {
+            console.error('Error:', err);
+            process.exit(1);
+          });
+          EOF
+      
+      - name: Commit and push prices.json
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          if git diff --quiet prices.json; then
+            echo "No changes to prices.json"
+          else
+            git add prices.json
+            git commit -m "Update prices - $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+            git push
+          fi
