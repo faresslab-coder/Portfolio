@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0f0f0f;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #2a2a2a;
+            --text-primary: #e8e8e8;
+            --text-secondary: #a8a8a8;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-blue: #3b82f6;
+            --border-color: #333333;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 15px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        .header-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .portfolio-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .summary-card {
+            padding: 15px;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+
+        .summary-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+
+        .summary-value {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .positive {
+            color: var(--accent-green);
+        }
+
+        .negative {
+            color: var(--accent-red);
+        }
+
+        .neutral {
+            color: var(--text-primary);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 30px;
+            overflow-x: auto;
+        }
+
+        .tab-button {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-button.active {
+            color: var(--text-primary);
+            border-bottom-color: var(--accent-blue);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Table */
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th {
+            background-color: var(--bg-secondary);
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-color);
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        tr:hover {
+            background-color: var(--bg-secondary);
+        }
+
+        .symbol {
+            font-weight: 600;
+            color: var(--accent-blue);
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        /* Charts */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 20px;
+        }
+
+        .chart-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+        }
+
+        .allocation-chart {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .allocation-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .allocation-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        /* Alerts */
+        .alert-list {
+            list-style: none;
+        }
+
+        .alert-item {
+            padding: 12px;
+            background-color: var(--bg-tertiary);
+            border-left: 3px solid;
+            margin-bottom: 10px;
+            border-radius: 2px;
+            font-size: 13px;
+        }
+
+        .alert-item.warning {
+            border-left-color: #f59e0b;
+        }
+
+        .alert-item.info {
+            border-left-color: var(--accent-blue);
+        }
+
+        .alert-item.success {
+            border-left-color: var(--accent-green);
+        }
+
+        .alert-symbol {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Utilities */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary);
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+
+        .currency {
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        @media (max-width: 768px) {
+            .header-top {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 8px;
+            }
+
+            .portfolio-summary {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-top">
+                <div>
+                    <h1>📊 Portfolio</h1>
+                    <div class="header-meta" id="lastUpdate">Updated: Loading...</div>
+                </div>
+            </div>
+
+            <div class="portfolio-summary" id="summaryCards">
+                <div class="summary-card">
+                    <div class="summary-label">Total Value</div>
+                    <div class="summary-value currency" id="totalValue">€0.00</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Total Invested</div>
+                    <div class="summary-value currency" id="totalInvested">€0.00</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Total Gain/Loss</div>
+                    <div class="summary-value currency" id="totalGain">€0.00</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Return %</div>
+                    <div class="summary-value currency" id="totalReturn">0.00%</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Cash Balance</div>
+                    <div class="summary-value currency" id="cashBalance">€0.00</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">YTD Dividends</div>
+                    <div class="summary-value currency positive" id="ytdDividends">€0.00</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('holdings')">Holdings</button>
+            <button class="tab-button" onclick="switchTab('pl')">P&L</button>
+            <button class="tab-button" onclick="switchTab('dividends')">Dividends</button>
+            <button class="tab-button" onclick="switchTab('allocation')">Allocation</button>
+            <button class="tab-button" onclick="switchTab('alerts')">Alerts</button>
+        </div>
+
+        <!-- Holdings Tab -->
+        <div id="holdings" class="tab-content active">
+            <div class="table-wrapper">
+                <table id="holdingsTable">
+                    <thead>
+                        <tr>
+                            <th>Symbol</th>
+                            <th class="text-right">Quantity</th>
+                            <th class="text-right">Avg Cost</th>
+                            <th class="text-right">Current</th>
+                            <th class="text-right">Value (EUR)</th>
+                            <th class="text-right">P&L</th>
+                            <th class="text-right">Return %</th>
+                            <th class="text-right">Div Yield</th>
+                        </tr>
+                    </thead>
+                    <tbody id="holdingsBody">
+                        <tr><td colspan="8" class="loading">Loading holdings...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- P&L Tab -->
+        <div id="pl" class="tab-content">
+            <div class="table-wrapper">
+                <table id="plTable">
+                    <thead>
+                        <tr>
+                            <th>Symbol</th>
+                            <th class="text-right">Quantity</th>
+                            <th class="text-right">Total Cost</th>
+                            <th class="text-right">Current Value</th>
+                            <th class="text-right">Gain/Loss (EUR)</th>
+                            <th class="text-right">Return %</th>
+                            <th class="text-right">YTD Div (EUR)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="plBody">
+                        <tr><td colspan="7" class="loading">Loading P&L...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Dividends Tab -->
+        <div id="dividends" class="tab-content">
+            <div class="table-wrapper">
+                <table id="dividendTable">
+                    <thead>
+                        <tr>
+                            <th>Symbol</th>
+                            <th class="text-right">Quantity</th>
+                            <th class="text-right">Annual Yield</th>
+                            <th class="text-right">YTD Income (EUR)</th>
+                            <th class="text-right">Next Payment</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dividendBody">
+                        <tr><td colspan="5" class="loading">Loading dividends...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Allocation Tab -->
+        <div id="allocation" class="tab-content">
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-title">By Asset Type</div>
+                    <div class="allocation-chart" id="assetAllocation"></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">By Currency</div>
+                    <div class="allocation-chart" id="currencyAllocation"></div>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Holdings Breakdown</div>
+                <div class="table-wrapper">
+                    <table id="allocationTable">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th class="text-right">Value (EUR)</th>
+                                <th class="text-right">% of Portfolio</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allocationBody">
+                            <tr><td colspan="3" class="loading">Loading allocation...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts Tab -->
+        <div id="alerts" class="tab-content">
+            <ul class="alert-list" id="alertsList">
+                <li class="alert-item info">Loading alerts...</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Portfolio data with cost basis from Yahoo Finance
+        const portfolio = [
+            // US Stocks
+            { symbol: 'NVDA', name: 'NVIDIA Corp', qty: 22, currency: 'EUR', type: 'stock', costBasis: 125.71, ytdDiv: 0, currentPrice: 180.23 },
+            { symbol: 'GOOGL', name: 'Alphabet Inc', qty: 5, currency: 'EUR', type: 'stock', costBasis: 221.37, ytdDiv: 0, currentPrice: 320.37 },
+            { symbol: 'PANW', name: 'Palo Alto Networks', qty: 5, currency: 'EUR', type: 'stock', costBasis: 179.60, ytdDiv: 0, currentPrice: 248.46 },
+            { symbol: 'TSM', name: 'Taiwan Semiconductor', qty: 3, currency: 'EUR', type: 'stock', costBasis: 268.62, ytdDiv: 0, currentPrice: 380.57 },
+            { symbol: 'AAPL', name: 'Apple Inc', qty: 3, currency: 'EUR', type: 'stock', costBasis: 210.00, ytdDiv: 0.84, currentPrice: 260.63 },
+            { symbol: 'AVGO', name: 'Broadcom Inc', qty: 3, currency: 'EUR', type: 'stock', costBasis: 297.72, ytdDiv: 0, currentPrice: 346.01 },
+            { symbol: 'TCEHY', name: 'Tencent Holdings', qty: 10, currency: 'EUR', type: 'stock', costBasis: 75.30, ytdDiv: 0.2, currentPrice: 49.15 },
+            { symbol: 'ROKU', name: 'Roku Inc', qty: 6, currency: 'EUR', type: 'stock', costBasis: 83.67, ytdDiv: 0, currentPrice: 120.90 },
+
+            // ETFs with weighted average cost basis
+            { symbol: 'VHYL.AS', name: 'Vanguard High Dividend Yield ETF', qty: 59, currency: 'EUR', type: 'etf', costBasis: 66.18, ytdDiv: 2.23, currentPrice: 80.57 },
+            { symbol: 'VUSA.AS', name: 'Vanguard S&P 500 ETF', qty: 46, currency: 'EUR', type: 'etf', costBasis: 103.13, ytdDiv: 0.82, currentPrice: 124.67 },
+            { symbol: 'BOTZ.L', name: 'Global X Robotics & AI ETF', qty: 78, currency: 'EUR', type: 'etf', costBasis: 22.99, ytdDiv: 0, currentPrice: 22.10 },
+
+            // European ETFs and Bonds
+            { symbol: 'YCSH.AS', name: 'iShares EUR Cash ETF', qty: 50, currency: 'EUR', type: 'etf', costBasis: 15.51, ytdDiv: 0.12, currentPrice: 15.72 },
+            { symbol: 'LYQ2.DE', name: 'Amundi Euro Govt Bond 1-3Y', qty: 3, currency: 'EUR', type: 'bond', costBasis: 127.70, ytdDiv: 0.18, currentPrice: 129.63 },
+            { symbol: 'IBCI.DE', name: 'iShares Inflation Linked Govt Bond', qty: 2, currency: 'EUR', type: 'bond', costBasis: 238.31, ytdDiv: 0.09, currentPrice: 240.18 },
+            { symbol: 'SXRP.DE', name: 'iShares Euro Govt Bond 3-7Y', qty: 3, currency: 'EUR', type: 'bond', costBasis: 133.83, ytdDiv: 0.27, currentPrice: 135.91 },
+            { symbol: 'EUNL.DE', name: 'iShares Core MSCI World', qty: 3, currency: 'EUR', type: 'etf', costBasis: 124.53, ytdDiv: 0.15, currentPrice: 125.25 },
+            { symbol: 'IS3R.DE', name: 'iShares MSCI EM ETF', qty: 4, currency: 'EUR', type: 'etf', costBasis: 102.78, ytdDiv: 0.08, currentPrice: 106.43 },
+            { symbol: 'IS3Q.DE', name: 'iShares EDGE MSCI Momentum', qty: 5, currency: 'EUR', type: 'etf', costBasis: 74.41, ytdDiv: 0.12, currentPrice: 76.50 },
+            { symbol: 'EUNM.DE', name: 'iShares EDGE Quality Factor', qty: 8, currency: 'EUR', type: 'etf', costBasis: 58.05, ytdDiv: 0.21, currentPrice: 58.12 },
+        ];
+
+        // Cash balance (debt)
+        const cashBalance = -4228.07;
+
+        // API Configuration
+        const ALPHA_VANTAGE_KEY = '2GK10U01TOJ33YDM';
+        const API_CALL_DELAY = 250; // milliseconds between calls (rate limiting)
+        const CACHE_DURATION = 86400000; // 24 hours in milliseconds
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load cached prices if available
+            loadCachedPrices();
+            updateDisplay();
+            fetchPricesFromAPI();
+            // Update daily
+            setInterval(fetchPricesFromAPI, CACHE_DURATION);
+        });
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function formatCurrency(value, currency = 'EUR') {
+            return new Intl.NumberFormat('de-DE', {
+                style: 'currency',
+                currency: currency,
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(value);
+        }
+
+        function formatPercent(value) {
+            const formatted = (value * 100).toFixed(2);
+            return `${formatted}%`;
+        }
+
+        function loadCachedPrices() {
+            const cached = localStorage.getItem('portfolioPrices');
+            const timestamp = localStorage.getItem('portfolioPricesTimestamp');
+            
+            if (cached && timestamp) {
+                const now = new Date().getTime();
+                const age = now - parseInt(timestamp);
+                
+                // Use cache if less than 24 hours old
+                if (age < CACHE_DURATION) {
+                    const prices = JSON.parse(cached);
+                    portfolio.forEach(holding => {
+                        if (prices[holding.symbol]) {
+                            holding.currentPrice = prices[holding.symbol];
+                        }
+                    });
+                    console.log('Loaded prices from cache');
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function savePricesToCache() {
+            const prices = {};
+            portfolio.forEach(holding => {
+                prices[holding.symbol] = holding.currentPrice;
+            });
+            localStorage.setItem('portfolioPrices', JSON.stringify(prices));
+            localStorage.setItem('portfolioPricesTimestamp', new Date().getTime().toString());
+        }
+
+        async function fetchPriceForSymbol(symbol) {
+            try {
+                const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${ALPHA_VANTAGE_KEY}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data['Global Quote'] && data['Global Quote']['05. price']) {
+                    const priceUSD = parseFloat(data['Global Quote']['05. price']);
+                    // For now, store as-is (in EUR based on DEGIRO snapshot)
+                    return priceUSD;
+                }
+                return null;
+            } catch (error) {
+                console.error(`Error fetching ${symbol}:`, error);
+                return null;
+            }
+        }
+
+        async function fetchPricesFromAPI() {
+            console.log('Fetching prices from Alpha Vantage API...');
+            
+            // Get symbols that need updating
+            const symbols = portfolio.map(h => h.symbol);
+            let updated = 0;
+            
+            for (let i = 0; i < symbols.length; i++) {
+                const symbol = symbols[i];
+                const holding = portfolio.find(h => h.symbol === symbol);
+                
+                // Rate limiting: wait between calls
+                if (i > 0) {
+                    await new Promise(resolve => setTimeout(resolve, API_CALL_DELAY));
+                }
+                
+                console.log(`Fetching ${symbol}...`);
+                const price = await fetchPriceForSymbol(symbol);
+                
+                if (price !== null) {
+                    // Store price as-is (prices are already in correct currency from DEGIRO)
+                    holding.currentPrice = price;
+                    updated++;
+                }
+            }
+            
+            if (updated > 0) {
+                savePricesToCache();
+                updateDisplay();
+                console.log(`Updated ${updated} prices`);
+            }
+        }
+
+        function calculateMetrics() {
+            const metrics = {
+                totalValue: 0,
+                totalInvested: 0,
+                totalGain: 0,
+                totalDividends: 0,
+                holdings: []
+            };
+
+            portfolio.forEach(holding => {
+                const currentPrice = holding.currentPrice;
+                const currentValueEUR = currentPrice * holding.qty;
+                const costEUR = holding.costBasis * holding.qty;
+                const gainEUR = currentValueEUR - costEUR;
+                const returnPct = costEUR > 0 ? gainEUR / costEUR : 0;
+                const ytdDivEUR = holding.ytdDiv * holding.qty;
+
+                metrics.holdings.push({
+                    ...holding,
+                    currentPrice,
+                    currentValueEUR,
+                    costEUR,
+                    gainEUR,
+                    returnPct,
+                    ytdDivEUR
+                });
+
+                metrics.totalValue += currentValueEUR;
+                metrics.totalInvested += costEUR;
+                metrics.totalDividends += ytdDivEUR;
+            });
+
+            metrics.totalGain = metrics.totalValue - metrics.totalInvested;
+            metrics.totalReturn = metrics.totalInvested > 0 ? metrics.totalGain / metrics.totalInvested : 0;
+
+            return metrics;
+        }
+
+        function updateDisplay() {
+            const metrics = calculateMetrics();
+
+            // Update summary cards
+            document.getElementById('totalValue').textContent = formatCurrency(metrics.totalValue + cashBalance);
+            document.getElementById('totalInvested').textContent = formatCurrency(metrics.totalInvested);
+            document.getElementById('totalGain').textContent = formatCurrency(metrics.totalGain);
+            document.getElementById('totalGain').className = `summary-value currency ${metrics.totalGain >= 0 ? 'positive' : 'negative'}`;
+            document.getElementById('totalReturn').textContent = formatPercent(metrics.totalReturn);
+            document.getElementById('totalReturn').className = `summary-value currency ${metrics.totalReturn >= 0 ? 'positive' : 'negative'}`;
+            document.getElementById('cashBalance').textContent = formatCurrency(cashBalance);
+            document.getElementById('cashBalance').className = `summary-value currency ${cashBalance >= 0 ? 'positive' : 'negative'}`;
+            document.getElementById('ytdDividends').textContent = formatCurrency(metrics.totalDividends);
+            document.getElementById('lastUpdate').textContent = `Updated: ${new Date().toLocaleString()}`;
+
+            // Update Holdings table
+            updateHoldingsTable(metrics.holdings);
+
+            // Update P&L table
+            updatePLTable(metrics.holdings);
+
+            // Update Dividends table
+            updateDividendsTable(metrics.holdings);
+
+            // Update Allocation
+            updateAllocation(metrics);
+
+            // Update Alerts
+            updateAlerts(metrics);
+        }
+
+        function updateHoldingsTable(holdings) {
+            const tbody = document.getElementById('holdingsBody');
+            tbody.innerHTML = holdings.map(h => `
+                <tr>
+                    <td><span class="symbol">${h.symbol}</span></td>
+                    <td class="text-right">${h.qty}</td>
+                    <td class="text-right currency">${formatCurrency(h.costBasis, 'EUR')}</td>
+                    <td class="text-right currency">${formatCurrency(h.currentPrice, 'EUR')}</td>
+                    <td class="text-right currency">${formatCurrency(h.currentValueEUR)}</td>
+                    <td class="text-right currency ${h.gainEUR >= 0 ? 'positive' : 'negative'}">${formatCurrency(h.gainEUR)}</td>
+                    <td class="text-right ${h.returnPct >= 0 ? 'positive' : 'negative'}">${formatPercent(h.returnPct)}</td>
+                    <td class="text-right positive">${formatPercent(h.ytdDiv / h.costBasis)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function updatePLTable(holdings) {
+            const tbody = document.getElementById('plBody');
+            const sorted = [...holdings].sort((a, b) => b.gainEUR - a.gainEUR);
+            tbody.innerHTML = sorted.map(h => `
+                <tr>
+                    <td><span class="symbol">${h.symbol}</span></td>
+                    <td class="text-right">${h.qty}</td>
+                    <td class="text-right currency">${formatCurrency(h.costEUR)}</td>
+                    <td class="text-right currency">${formatCurrency(h.currentValueEUR)}</td>
+                    <td class="text-right currency ${h.gainEUR >= 0 ? 'positive' : 'negative'}">${formatCurrency(h.gainEUR)}</td>
+                    <td class="text-right ${h.returnPct >= 0 ? 'positive' : 'negative'}">${formatPercent(h.returnPct)}</td>
+                    <td class="text-right currency positive">${formatCurrency(h.ytdDivEUR)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function updateDividendsTable(holdings) {
+            const tbody = document.getElementById('dividendBody');
+            const withDividends = holdings.filter(h => h.ytdDiv > 0).sort((a, b) => b.ytdDivEUR - a.ytdDivEUR);
+            
+            if (withDividends.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="no-data">No dividend payers in portfolio</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = withDividends.map(h => `
+                <tr>
+                    <td><span class="symbol">${h.symbol}</span></td>
+                    <td class="text-right">${h.qty}</td>
+                    <td class="text-right">${formatPercent(h.ytdDiv / h.costBasis)}</td>
+                    <td class="text-right currency positive">${formatCurrency(h.ytdDivEUR)}</td>
+                    <td class="text-center text-secondary">TBD</td>
+                </tr>
+            `).join('');
+        }
+
+        function updateAllocation(metrics) {
+            const colors = [
+                '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899',
+                '#14b8a6', '#f97316', '#06b6d4', '#6366f1', '#84cc16', '#a855f7'
+            ];
+
+            // By asset type
+            const byType = {};
+            metrics.holdings.forEach((h, i) => {
+                byType[h.type] = (byType[h.type] || 0) + h.currentValueEUR;
+            });
+
+            const assetAlloc = document.getElementById('assetAllocation');
+            let colorIdx = 0;
+            assetAlloc.innerHTML = Object.entries(byType)
+                .sort((a, b) => b[1] - a[1])
+                .map(([type, value]) => {
+                    const pct = (value / metrics.totalValue * 100).toFixed(1);
+                    return `
+                        <div class="allocation-item">
+                            <div class="allocation-color" style="background-color: ${colors[colorIdx++ % colors.length]}"></div>
+                            <span>${type.charAt(0).toUpperCase() + type.slice(1)}: ${pct}%</span>
+                        </div>
+                    `;
+                }).join('');
+
+            // By currency
+            const byCurrency = {};
+            metrics.holdings.forEach(h => {
+                byCurrency[h.currency] = (byCurrency[h.currency] || 0) + h.currentValueEUR;
+            });
+
+            const currencyAlloc = document.getElementById('currencyAllocation');
+            colorIdx = 0;
+            currencyAlloc.innerHTML = Object.entries(byCurrency)
+                .sort((a, b) => b[1] - a[1])
+                .map(([curr, value]) => {
+                    const pct = (value / metrics.totalValue * 100).toFixed(1);
+                    return `
+                        <div class="allocation-item">
+                            <div class="allocation-color" style="background-color: ${colors[colorIdx++ % colors.length]}"></div>
+                            <span>${curr}: ${pct}%</span>
+                        </div>
+                    `;
+                }).join('');
+
+            // Breakdown table
+            const tbody = document.getElementById('allocationBody');
+            const sorted = [...metrics.holdings].sort((a, b) => b.currentValueEUR - a.currentValueEUR);
+            tbody.innerHTML = sorted.map(h => {
+                const pct = (h.currentValueEUR / metrics.totalValue * 100).toFixed(2);
+                return `
+                    <tr>
+                        <td><span class="symbol">${h.symbol}</span></td>
+                        <td class="text-right currency">${formatCurrency(h.currentValueEUR)}</td>
+                        <td class="text-right">${pct}%</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateAlerts(metrics) {
+            const alerts = [];
+
+            // Debt alert
+            if (cashBalance < 0) {
+                alerts.push({
+                    type: 'warning',
+                    message: `💳 Margin Debt: ${formatCurrency(cashBalance)}. Review credit line with DEGIRO.`
+                });
+            }
+
+            // Top gainers
+            const topGainer = metrics.holdings.reduce((a, b) => a.returnPct > b.returnPct ? a : b);
+            if (topGainer.returnPct > 0.3) {
+                alerts.push({
+                    type: 'info',
+                    message: `📈 <span class="alert-symbol">${topGainer.symbol}</span> is up ${formatPercent(topGainer.returnPct)}. Consider taking profit?`
+                });
+            }
+
+            // Losers
+            const losers = metrics.holdings.filter(h => h.returnPct < -0.1).sort((a, b) => a.returnPct - b.returnPct);
+            if (losers.length > 0) {
+                const worst = losers[0];
+                alerts.push({
+                    type: 'warning',
+                    message: `📉 <span class="alert-symbol">${worst.symbol}</span> is down ${formatPercent(worst.returnPct)}. Review thesis.`
+                });
+            }
+
+            // Allocation warnings
+            const largestAlloc = metrics.holdings.reduce((a, b) => a.currentValueEUR > b.currentValueEUR ? a : b);
+            const allocPct = largestAlloc.currentValueEUR / metrics.totalValue;
+            if (allocPct > 0.25) {
+                alerts.push({
+                    type: 'warning',
+                    message: `⚠️ <span class="alert-symbol">${largestAlloc.symbol}</span> represents ${(allocPct * 100).toFixed(1)}% of portfolio. Consider rebalancing.`
+                });
+            }
+
+            // Dividend income
+            if (metrics.totalDividends > 0) {
+                alerts.push({
+                    type: 'success',
+                    message: `💰 YTD Dividend Income: ${formatCurrency(metrics.totalDividends)}`
+                });
+            }
+
+            const alertsList = document.getElementById('alertsList');
+            if (alerts.length === 0) {
+                alertsList.innerHTML = '<li class="alert-item info">✅ No alerts. Portfolio looks healthy.</li>';
+            } else {
+                alertsList.innerHTML = alerts.map(a => `
+                    <li class="alert-item ${a.type}">${a.message}</li>
+                `).join('');
+            }
+        }
+
+        // Format initial display
+        updateDisplay();
+    </script>
+</body>
+</html>
