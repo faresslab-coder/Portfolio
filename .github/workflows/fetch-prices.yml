@@ -55,8 +55,8 @@ jobs:
               console.log(`✗ ${symbol}: Error - ${error.message}`);
             }
             
-            // Rate limiting: wait 250ms between calls
-            await new Promise(resolve => setTimeout(resolve, 250));
+            // Rate limiting: wait 1000ms between calls
+            await new Promise(resolve => setTimeout(resolve, 1000));
           }
           
           async function main() {
