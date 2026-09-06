@@ -2,10 +2,7 @@ name: Fetch Daily Prices
 
 on:
   schedule:
-    # Run every day at 9 AM UTC (adjust time if needed)
     - cron: '0 9 * * *'
-  
-  # Also allow manual trigger
   workflow_dispatch:
 
 jobs:
@@ -24,14 +21,14 @@ jobs:
         env:
           ALPHA_VANTAGE_KEY: ${{ secrets.ALPHA_VANTAGE_KEY }}
         run: |
-          node - <<'EOF'
+          node - <<'NODEJS'
           const fs = require('fs');
           
           const ALPHA_VANTAGE_KEY = process.env.ALPHA_VANTAGE_KEY;
           const symbols = [
             'NVDA', 'GOOGL', 'PANW', 'TSM', 'AAPL', 'AVGO', 'TCEHY', 'ROKU',
             'VHYL.AS', 'VUSA.AS', 'BOTZ.L', 'YCSH.AS', 'LYQ2.DE', 'IBCI.DE',
-            'SXRP.DE', 'EUNL.DE', 'IS3R.DE', 'IS3Q.DE', 'EUNM.DE'
+            'SXRP.DE', 'EUNL.DE', 'IS3R.DE', 'IS3Q.DE', 'IS3S.DE'
           ];
           
           const prices = {};
@@ -54,8 +51,6 @@ jobs:
             } catch (error) {
               console.log(`✗ ${symbol}: Error - ${error.message}`);
             }
-            
-            // Rate limiting: wait 1000ms between calls
             await new Promise(resolve => setTimeout(resolve, 1000));
           }
           
@@ -68,26 +63,40 @@ jobs:
             
             console.log(`\nFetched ${fetchedCount}/${symbols.length} prices`);
             
-            // Save prices to JSON
-            fs.writeFileSync('prices.json', JSON.stringify(prices, null, 2));
-            console.log('✓ Saved prices.json');
+            // Ensure prices.json is created
+            const jsonPath = 'prices.json';
+            fs.writeFileSync(jsonPath, JSON.stringify(prices, null, 2));
+            console.log(`✓ Saved to ${jsonPath}`);
+            
+            // Verify file exists
+            if (fs.existsSync(jsonPath)) {
+              console.log(`✓ File verified to exist`);
+            } else {
+              console.log(`✗ File does not exist!`);
+              process.exit(1);
+            }
           }
           
           main().catch(err => {
             console.error('Error:', err);
             process.exit(1);
           });
-          EOF
+          NODEJS
       
-      - name: Commit and push prices.json
+      - name: Configure git
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          
-          if git diff --quiet prices.json; then
-            echo "No changes to prices.json"
-          else
+      
+      - name: Add and commit prices.json
+        run: |
+          echo "Checking for prices.json..."
+          if [ -f prices.json ]; then
+            echo "prices.json exists"
             git add prices.json
-            git commit -m "Update prices - $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+            git commit -m "Update prices - $(date -u +'%Y-%m-%d %H:%M:%S UTC')" || echo "No changes or commit failed"
             git push
+          else
+            echo "ERROR: prices.json was not created!"
+            exit 1
           fi
