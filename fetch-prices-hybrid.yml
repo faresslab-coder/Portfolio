@@ -1,0 +1,106 @@
+name: Fetch Daily Prices
+
+on:
+  schedule:
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+jobs:
+  fetch-prices:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Fetch prices from Alpha Vantage and Yahoo Finance
+        env:
+          ALPHA_VANTAGE_KEY: ${{ secrets.ALPHA_VANTAGE_KEY }}
+        run: |
+          node - <<'NODEJS'
+          const https = require('https');
+          const fs = require('fs');
+          
+          const ALPHA_VANTAGE_KEY = process.env.ALPHA_VANTAGE_KEY;
+          
+          const usStocks = ['NVDA', 'GOOGL', 'PANW', 'TSM', 'AAPL', 'AVGO', 'TCEHY', 'ROKU'];
+          const europeEtfs = ['VHYL.AS', 'VUSA.AS', 'BOTZ.L', 'YCSH.AS', 'LYQ2.DE', 'IBCI.DE', 'SXRP.DE', 'EUNL.DE', 'IS3R.DE', 'IS3Q.DE', 'IS3S.DE'];
+          
+          const prices = {};
+          let fetchedCount = 0;
+          
+          async function fetchAlphaVantage(symbol) {
+            return new Promise((resolve) => {
+              const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${ALPHA_VANTAGE_KEY}`;
+              https.get(url, (res) => {
+                let data = '';
+                res.on('data', chunk => data += chunk);
+                res.on('end', () => {
+                  try {
+                    const json = JSON.parse(data);
+                    if (json['Global Quote'] && json['Global Quote']['05. price']) {
+                      prices[symbol] = parseFloat(json['Global Quote']['05. price']);
+                      console.log(`✓ ${symbol}: ${prices[symbol].toFixed(2)}`);
+                      fetchedCount++;
+                    }
+                  } catch (e) {}
+                  resolve();
+                });
+              }).on('error', () => resolve());
+              setTimeout(() => resolve(), 5000);
+            });
+          }
+          
+          async function fetchYahooFinance(symbol) {
+            return new Promise((resolve) => {
+              const url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${symbol}?modules=price`;
+              https.get(url, (res) => {
+                let data = '';
+                res.on('data', chunk => data += chunk);
+                res.on('end', () => {
+                  try {
+                    const json = JSON.parse(data);
+                    const price = json?.quoteSummary?.result?.[0]?.price?.regularMarketPrice?.raw;
+                    if (price) {
+                      prices[symbol] = price;
+                      console.log(`✓ ${symbol}: ${price.toFixed(2)}`);
+                      fetchedCount++;
+                    }
+                  } catch (e) {}
+                  resolve();
+                });
+              }).on('error', () => resolve());
+              setTimeout(() => resolve(), 5000);
+            });
+          }
+          
+          async function main() {
+            console.log('Fetching prices...');
+            for (const symbol of usStocks) {
+              await fetchAlphaVantage(symbol);
+              await new Promise(r => setTimeout(r, 1000));
+            }
+            for (const symbol of europeEtfs) {
+              await fetchYahooFinance(symbol);
+              await new Promise(r => setTimeout(r, 500));
+            }
+            console.log(`Fetched ${fetchedCount} prices`);
+            fs.writeFileSync('prices.json', JSON.stringify(prices, null, 2));
+            console.log('Saved prices.json');
+          }
+          main().catch(err => { console.error(err); process.exit(1); });
+          NODEJS
+      
+      - name: Commit and push
+        run: |
+          git config user.email "action@github.com"
+          git config user.name "GitHub Action"
+          if [ -f prices.json ]; then
+            git add prices.json
+            git commit -m "Update prices - $(date)" || true
+            git push
+          fi
